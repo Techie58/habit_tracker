@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:iron_mind/core/utils/colors.dart';
 import 'package:iron_mind/features/challenge/presentation/providers/challenge_provider.dart';
+import 'package:iron_mind/features/habit/presentation/widgets/custom_date_picker_dialog.dart';
 import 'package:iron_mind/features/challenge/data/models/challenge_model.dart';
 import 'package:uuid/uuid.dart';
 
@@ -19,6 +21,7 @@ class CreateChallengeScreen extends HookConsumerWidget {
     final consequenceType = useState('PHYSICAL');
     final specificConsequence = useState('COLD SHOWER');
     final roadmap = useState<List<ChallengeMilestone>>([]);
+    final startDate = useState<DateTime>(DateTime.now());
     final colors = Theme.of(context).appColors;
 
     useEffect(() {
@@ -29,6 +32,7 @@ class CreateChallengeScreen extends HookConsumerWidget {
         consequenceType.value = challengeToEdit!.consequenceType;
         specificConsequence.value = challengeToEdit!.specificConsequence;
         roadmap.value = challengeToEdit!.roadmap;
+        startDate.value = challengeToEdit!.startDate;
       }
       return null;
     }, []);
@@ -53,6 +57,7 @@ class CreateChallengeScreen extends HookConsumerWidget {
           consequenceType: consequenceType.value,
           specificConsequence: specificConsequence.value,
           roadmap: roadmap.value,
+          startDate: startDate.value,
         );
         ref.read(challengeProvider.notifier).updateChallenge(updatedChallenge);
       } else {
@@ -64,7 +69,7 @@ class CreateChallengeScreen extends HookConsumerWidget {
               threatLevel: threatLevel.value,
               consequenceType: consequenceType.value,
               specificConsequence: specificConsequence.value,
-              startDate: DateTime.now(),
+              startDate: startDate.value,
               roadmap: roadmap.value,
             );
       }
@@ -115,6 +120,15 @@ class CreateChallengeScreen extends HookConsumerWidget {
                 keyboardType: TextInputType.number,
               ),
 
+              const SizedBox(height: 20),
+              _buildLabel('START DATE', colors),
+              _buildDatePicker(
+                context,
+                startDate.value,
+                (date) => startDate.value = date,
+                colors,
+              ),
+
               const SizedBox(height: 30),
               _buildSectionHeader('MISSION ROADMAP', colors),
               ...roadmap.value.map(
@@ -130,8 +144,8 @@ class CreateChallengeScreen extends HookConsumerWidget {
                 });
               }, colors),
 
-              const SizedBox(height: 40),
-              _buildWarningCard(colors),
+              // const SizedBox(height: 40),
+              // _buildWarningCard(colors),
               const SizedBox(height: 20),
               _buildAcceptButton(handleAccept, colors),
               const SizedBox(height: 40),
@@ -210,7 +224,7 @@ class CreateChallengeScreen extends HookConsumerWidget {
         ),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: colors.textMuted.withOpacity(0.2)),
+          hintStyle: TextStyle(color: colors.textMuted.withValues(alpha: 0.2)),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
@@ -218,52 +232,52 @@ class CreateChallengeScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildWarningCard(AppColorScheme colors) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.highPriorityColor.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.highPriorityColor.withOpacity(0.2)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.warning_amber_rounded,
-            color: AppColors.highPriorityColor,
-            size: 28,
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'BROTHERHOOD WARNING',
-                  style: TextStyle(
-                    color: AppColors.highPriorityColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Once started, backing out has consequences. Your progress will be monitored by the brotherhood.',
-                  style: TextStyle(
-                    color: colors.textSecondary,
-                    fontSize: 12,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildWarningCard(AppColorScheme colors) {
+  //   return Container(
+  //     padding: const EdgeInsets.all(20),
+  //     decoration: BoxDecoration(
+  //       color: AppColors.highPriorityColor.withOpacity(0.05),
+  //       borderRadius: BorderRadius.circular(12),
+  //       border: Border.all(color: AppColors.highPriorityColor.withOpacity(0.2)),
+  //     ),
+  //     child: Row(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         const Icon(
+  //           Icons.warning_amber_rounded,
+  //           color: AppColors.highPriorityColor,
+  //           size: 28,
+  //         ),
+  //         const SizedBox(width: 15),
+  //         Expanded(
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               const Text(
+  //                 'BROTHERHOOD WARNING',
+  //                 style: TextStyle(
+  //                   color: AppColors.highPriorityColor,
+  //                   fontWeight: FontWeight.bold,
+  //                   fontSize: 12,
+  //                   letterSpacing: 1.1,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 8),
+  //               Text(
+  //                 'Once started, backing out has consequences. Your progress will be monitored by the brotherhood.',
+  //                 style: TextStyle(
+  //                   color: colors.textSecondary,
+  //                   fontSize: 12,
+  //                   height: 1.4,
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildAcceptButton(VoidCallback onTap, AppColorScheme colors) {
     return SizedBox(
@@ -277,7 +291,7 @@ class CreateChallengeScreen extends HookConsumerWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           elevation: 10,
-          shadowColor: colors.primary.withOpacity(0.5),
+          shadowColor: colors.primary.withValues(alpha: 0.5),
         ),
         child: Text(
           challengeToEdit != null ? 'UPDATE MISSION' : 'ACCEPT THE CHALLENGE',
@@ -310,7 +324,7 @@ class CreateChallengeScreen extends HookConsumerWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: colors.primary.withOpacity(0.1),
+              color: colors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.flag, color: colors.primary, size: 20),
@@ -383,6 +397,47 @@ class CreateChallengeScreen extends HookConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => _MilestoneAddDialog(onAdded: onAdded),
+    );
+  }
+
+  Widget _buildDatePicker(
+    BuildContext context,
+    DateTime selectedDate,
+    Function(DateTime) onDateChange,
+    AppColorScheme colors,
+  ) {
+    return InkWell(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (context) => CustomDatePickerDialog(
+            initialDate: selectedDate,
+            title: 'SELECT START DATE',
+            onSelected: onDateChange,
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: colors.border),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              DateFormat('yyyy-MM-dd').format(selectedDate),
+              style: TextStyle(
+                color: colors.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Icon(Icons.calendar_today, color: colors.primary, size: 20),
+          ],
+        ),
+      ),
     );
   }
 }

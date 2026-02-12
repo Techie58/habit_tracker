@@ -24,6 +24,7 @@ class HabitNotifier extends Notifier<List<HabitModel>> {
     required String priority,
     required String motivationNote,
     required DateTime endDate,
+    DateTime? createdAt,
   }) async {
     final newHabit = HabitModel(
       id: const Uuid().v4(),
@@ -36,7 +37,7 @@ class HabitNotifier extends Notifier<List<HabitModel>> {
       reminderTime: reminderTime,
       priority: priority,
       motivationNote: motivationNote,
-      createdAt: DateTime.now(),
+      createdAt: createdAt ?? DateTime.now(),
       endDate: endDate,
     );
     await HiveService.saveHabit(newHabit);

@@ -44,6 +44,13 @@ class HabitListView extends HookConsumerWidget {
             date.weekday == DateTime.saturday ||
             date.weekday == DateTime.sunday;
         if (!isWeekend) return false;
+      } else if (habit.frequency.startsWith('CUSTOM:')) {
+        final daysStr = habit.frequency.split(':')[1];
+        final allowedDays = daysStr
+            .split(',')
+            .map((s) => int.parse(s))
+            .toList();
+        if (!allowedDays.contains(date.weekday)) return false;
       }
 
       return true;

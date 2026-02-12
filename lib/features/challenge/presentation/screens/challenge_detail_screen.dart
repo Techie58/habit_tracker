@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:iron_mind/core/utils/colors.dart';
 import 'package:iron_mind/features/challenge/data/models/challenge_model.dart';
 import 'package:iron_mind/features/challenge/presentation/providers/challenge_provider.dart';
+import 'package:iron_mind/features/challenge/presentation/screens/create_challenge_screen.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 class ChallengeDetailScreen extends HookConsumerWidget {
@@ -44,11 +45,13 @@ class ChallengeDetailScreen extends HookConsumerWidget {
             IconButton(
               icon: Icon(Icons.edit, color: colors.textPrimary),
               onPressed: () {
-                // Navigate to edit screen if we had one here, but currently
-                // it seems edit is handled in ChallengeScreen via PopupMenu.
-                // However, the user said "After clicking on the completed challenge
-                // the detail screen should be opening but enable to edit."
-                // So I will just make sure no edit button appears here.
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        CreateChallengeScreen(challengeToEdit: freshChallenge),
+                  ),
+                );
               },
             ),
         ],

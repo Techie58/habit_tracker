@@ -224,6 +224,13 @@ class _CalendarHeaderDelegate extends SliverPersistentHeaderDelegate {
       if (habit.frequency == 'WEEKLY') {
         return dateOnly.weekday == DateTime.saturday ||
             dateOnly.weekday == DateTime.sunday;
+      } else if (habit.frequency.startsWith('CUSTOM:')) {
+        final daysStr = habit.frequency.split(':')[1];
+        final allowedDays = daysStr
+            .split(',')
+            .map((s) => int.parse(s))
+            .toList();
+        return allowedDays.contains(dateOnly.weekday);
       }
       return true;
     }).toList();

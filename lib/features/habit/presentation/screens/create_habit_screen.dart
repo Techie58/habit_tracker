@@ -5,6 +5,7 @@ import 'package:iron_mind/core/utils/colors.dart';
 import 'package:iron_mind/core/utils/responsive.dart';
 import 'package:iron_mind/features/habit/presentation/providers/habit_provider.dart';
 import 'package:iron_mind/features/habit/data/models/habit_model.dart';
+import 'package:iron_mind/features/habit/presentation/widgets/custom_date_picker_dialog.dart';
 
 class CreateHabitScreen extends HookConsumerWidget {
   final HabitModel? habitToEdit;
@@ -20,8 +21,10 @@ class CreateHabitScreen extends HookConsumerWidget {
     final selectedFrequency = useState('DAILY');
     final targetValue = useState(1);
     final targetUnit = useState('TIMES');
+    final startDate = useState(DateTime.now());
     final endDate = useState(DateTime.now().add(const Duration(days: 30)));
     final priority = useState('MEDIUM');
+    final customDays = useState<List<int>>([]); // 1-7 for Mon-Sun
     final colors = Theme.of(context).appColors;
 
     final categories = useState([
@@ -58,17 +61,32 @@ class CreateHabitScreen extends HookConsumerWidget {
         endDate.value = habitToEdit!.endDate;
         priority.value = habitToEdit!.priority;
         noteController.text = habitToEdit!.motivationNote;
+        startDate.value = habitToEdit!.createdAt;
+        if (habitToEdit!.frequency.startsWith('CUSTOM:')) {
+          selectedFrequency.value = 'CUSTOM';
+          final daysStr = habitToEdit!.frequency.split(':')[1];
+          customDays.value = daysStr.split(',').map(int.parse).toList();
+        }
       }
       return null;
     }, []);
 
-    void handleSubmit() {
+    String _formatFrequency() {
+      if (selectedFrequency.value == 'CUSTOM') {
+        return 'CUSTOM:${customDays.value.join(',')}';
+      }
+      return selectedFrequency.value;
+    }
+
+    void handleInternalSubmit() {
       if (nameController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please enter a habit name')),
         );
         return;
       }
+
+      final frequencyStr = _formatFrequency();
 
       if (habitToEdit != null) {
         ref
@@ -78,14 +96,14 @@ class CreateHabitScreen extends HookConsumerWidget {
               name: nameController.text,
               category: selectedCategory.value,
               categoryIcon: selectedIcon.value,
-              frequency: selectedFrequency.value,
+              frequency: frequencyStr,
               targetValue: targetValue.value,
               targetUnit: targetUnit.value,
               reminderTime: null,
               priority: priority.value,
               motivationNote: noteController.text,
               endDate: endDate.value,
-              createdAt: habitToEdit!.createdAt,
+              createdAt: startDate.value,
               completedDates: habitToEdit!.completedDates,
             );
       } else {
@@ -95,13 +113,14 @@ class CreateHabitScreen extends HookConsumerWidget {
               name: nameController.text,
               category: selectedCategory.value,
               categoryIcon: selectedIcon.value,
-              frequency: selectedFrequency.value,
+              frequency: frequencyStr,
               targetValue: targetValue.value,
               targetUnit: targetUnit.value,
               reminderTime: null,
               priority: priority.value,
               motivationNote: noteController.text,
               endDate: endDate.value,
+              createdAt: startDate.value,
             );
       }
 
@@ -146,6 +165,25 @@ class CreateHabitScreen extends HookConsumerWidget {
 
               SizedBox(height: context.h(3)),
 
+              _sectionHeader('FREQUENCY', colors),
+              _frequencyToggle(
+                context,
+                selectedFrequency.value,
+                (val) => selectedFrequency.value = val,
+                colors,
+              ),
+
+              if (selectedFrequency.value == 'CUSTOM') ...[
+                const SizedBox(height: 15),
+                _customDaysSelector(
+                  customDays.value,
+                  (days) => customDays.value = days,
+                  colors,
+                ),
+              ],
+
+              SizedBox(height: context.h(3)),
+
               _sectionHeader('CATEGORY', colors),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -177,53 +215,29 @@ class CreateHabitScreen extends HookConsumerWidget {
                 ),
               ),
 
-              SizedBox(height: context.h(3)),
-
+              _sectionHeader('HABIT DURATION', colors),
               Row(
                 children: [
                   Expanded(
-                    flex: 5,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _sectionHeader('FREQUENCY', colors),
-                        _frequencyToggle(
-                          context,
-                          selectedFrequency.value,
-                          (val) => selectedFrequency.value = val,
-                          colors,
-                        ),
-                      ],
+                    child: _dateButton(
+                      context,
+                      'Start Date',
+                      startDate.value,
+                      (date) => startDate.value = date,
+                      colors,
                     ),
                   ),
                   const SizedBox(width: 15),
                   Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _sectionHeader('GOAL/TARGET', colors),
-                        _goalInput(
-                          context,
-                          targetValue.value,
-                          targetUnit.value,
-                          (val) => targetValue.value = val,
-                          colors,
-                        ),
-                      ],
+                    child: _dateButton(
+                      context,
+                      'End Date',
+                      endDate.value,
+                      (date) => endDate.value = date,
+                      colors,
                     ),
                   ),
                 ],
-              ),
-
-              SizedBox(height: context.h(3)),
-
-              _sectionHeader('HABIT DURATION', colors),
-              _endDateSetter(
-                context,
-                endDate.value,
-                (val) => endDate.value = val,
-                colors,
               ),
 
               SizedBox(height: context.h(3)),
@@ -243,7 +257,9 @@ class CreateHabitScreen extends HookConsumerWidget {
 
               SizedBox(height: context.h(4)),
 
-              _createHabitButton(context, handleSubmit, colors),
+              SizedBox(height: context.h(4)),
+
+              _createHabitButton(context, handleInternalSubmit, colors),
 
               SizedBox(height: context.h(5)),
             ],
@@ -388,7 +404,7 @@ class CreateHabitScreen extends HookConsumerWidget {
         borderRadius: BorderRadius.circular(30),
       ),
       child: Row(
-        children: ['DAILY', 'WEEKLY'].map((freq) {
+        children: ['DAILY', 'WEEKLY', 'CUSTOM'].map((freq) {
           bool isSel = selected == freq;
           return Expanded(
             child: GestureDetector(
@@ -416,141 +432,114 @@ class CreateHabitScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _goalInput(
+  Widget _dateButton(
     BuildContext context,
-    int value,
-    String unit,
-    Function(int) onValueChange,
-    AppColorScheme colors,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: colors.border.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Text(
-            '$value',
-            style: TextStyle(
-              color: colors.textPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            height: 24,
-            width: 1,
-            color: colors.divider,
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-          ),
-          Text(
-            unit,
-            style: TextStyle(
-              color: colors.textMuted,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Icon(Icons.keyboard_arrow_down, color: colors.textMuted, size: 16),
-        ],
-      ),
-    );
-  }
-
-  Widget _endDateSetter(
-    BuildContext context,
+    String label,
     DateTime selectedDate,
     Function(DateTime) onDateChange,
     AppColorScheme colors,
   ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colors.border.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: colors.primary.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.calendar_today,
-                  color: colors.primary,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'End Date',
-                    style: TextStyle(
-                      color: colors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                  Text(
-                    'HABIT DURATION RANGE',
-                    style: TextStyle(
-                      color: colors.textMuted,
-                      fontSize: 10,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+    return InkWell(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (context) => CustomDatePickerDialog(
+            initialDate: selectedDate,
+            title: 'SELECT ${label.toUpperCase()}',
+            onSelected: onDateChange,
           ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 100,
-            child: ListWheelScrollView.useDelegate(
-              itemExtent: 50,
-              physics: const FixedExtentScrollPhysics(),
-              onSelectedItemChanged: (index) {
-                onDateChange(DateTime.now().add(Duration(days: index + 1)));
-              },
-              childDelegate: ListWheelChildBuilderDelegate(
-                builder: (context, index) {
-                  final date = DateTime.now().add(Duration(days: index + 1));
-                  final isSelected =
-                      date.day == selectedDate.day &&
-                      date.month == selectedDate.month &&
-                      date.year == selectedDate.year;
-                  return Center(
-                    child: Text(
-                      "${date.day} ${_getMonth(date.month)} ${date.year}",
-                      style: TextStyle(
-                        color: isSelected
-                            ? colors.primary
-                            : colors.textMuted.withOpacity(0.4),
-                        fontSize: isSelected ? 24 : 18,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: colors.border.withOpacity(0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(color: colors.textMuted, fontSize: 10),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "${selectedDate.day} ${_getMonth(selectedDate.month)} ${selectedDate.year}",
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                Icon(Icons.calendar_today, color: colors.primary, size: 16),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _customDaysSelector(
+    List<int> selectedDays,
+    Function(List<int>) onChange,
+    AppColorScheme colors,
+  ) {
+    final days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: List.generate(7, (index) {
+        final dayNum = index + 1;
+        final isSelected = selectedDays.contains(dayNum);
+        return GestureDetector(
+          onTap: () {
+            final newList = List<int>.from(selectedDays);
+            if (isSelected) {
+              newList.remove(dayNum);
+            } else {
+              newList.add(dayNum);
+            }
+            onChange(newList);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isSelected ? colors.primary : colors.surface,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected
+                    ? Colors.transparent
+                    : colors.border.withOpacity(0.3),
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: colors.primary.withOpacity(0.4),
+                        blurRadius: 8,
+                        spreadRadius: 1,
                       ),
-                    ),
-                  );
-                },
-                childCount: 365,
+                    ]
+                  : [],
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              days[index],
+              style: TextStyle(
+                color: isSelected ? Colors.white : colors.textMuted,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
               ),
             ),
           ),
-        ],
-      ),
+        );
+      }),
     );
   }
 
