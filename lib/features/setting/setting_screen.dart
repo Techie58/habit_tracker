@@ -3,6 +3,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:iron_mind/core/utils/colors.dart';
 import 'package:iron_mind/core/providers/theme_provider.dart';
 import 'package:iron_mind/core/providers/app_providers.dart';
+import 'package:iron_mind/core/services/notification_service.dart';
+import 'package:iron_mind/features/challenge/presentation/providers/challenge_provider.dart';
 
 class SettingScreen extends HookConsumerWidget {
   const SettingScreen({super.key});
@@ -39,145 +41,121 @@ class SettingScreen extends HookConsumerWidget {
             const SizedBox(height: 40),
             _sectionHeader('PREFERENCES', colors),
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: colors.surface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: colors.border.withOpacity(0.5)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.swap_horiz, color: colors.textSecondary),
-                      const SizedBox(width: 16),
-                      Text(
-                        'Swap Challenges & Habit',
-                        style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Switch(
-                    value: ref.watch(swapHomeAndChallengeProvider),
-                    onChanged: (val) {
-                      ref.read(swapHomeAndChallengeProvider.notifier).state =
-                          val;
-                    },
-                    activeColor: colors.primary,
-                  ),
-                ],
-              ),
+            _buildToggleCard(
+              'Swap Challenges & Habit',
+              Icons.swap_horiz,
+              ref.watch(swapHomeAndChallengeProvider),
+              (val) =>
+                  ref.read(swapHomeAndChallengeProvider.notifier).state = val,
+              colors,
             ),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: colors.surface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: colors.border.withOpacity(0.5)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.calendar_month, color: colors.textSecondary),
-                      const SizedBox(width: 16),
-                      Text(
-                        'Show Habit Calendar',
-                        style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Switch(
-                    value: ref.watch(showHabitCalendarProvider),
-                    onChanged: (val) {
-                      ref.read(showHabitCalendarProvider.notifier).state = val;
-                    },
-                    activeColor: colors.primary,
-                  ),
-                ],
-              ),
+            _buildToggleCard(
+              'Show Habit Calendar',
+              Icons.calendar_month,
+              ref.watch(showHabitCalendarProvider),
+              (val) => ref.read(showHabitCalendarProvider.notifier).state = val,
+              colors,
             ),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: colors.surface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: colors.border.withOpacity(0.5)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.flag, color: colors.textSecondary),
-                      const SizedBox(width: 16),
-                      Text(
-                        'Max Active Challenges',
-                        style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
+            _buildMaxChallengesDropdown(ref, colors),
+            const SizedBox(height: 40),
+            _sectionHeader('NOTIFICATIONS', colors),
+            const SizedBox(height: 16),
+            _buildNotificationCard(context, ref, colors),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      debugPrint('Test notification button tapped');
+                      await NotificationService.showTestNotification();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('Instant test sent!'),
+                            backgroundColor: colors.primary,
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: colors.primary.withOpacity(0.3),
                         ),
                       ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colors.chipBg,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: colors.border.withOpacity(0.5)),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<int>(
-                        value: ref.watch(maxChallengesProvider),
-                        isDense: true,
-                        menuMaxHeight: 250,
-                        dropdownColor: colors.dialogBg,
-                        borderRadius: BorderRadius.circular(12),
-                        style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        icon: Icon(
-                          Icons.expand_more,
-                          color: colors.textSecondary,
-                          size: 18,
-                        ),
-                        items: List.generate(20, (i) => i + 1).map((val) {
-                          return DropdownMenuItem(
-                            value: val,
-                            child: Text('$val'),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            ref.read(maxChallengesProvider.notifier).state =
-                                val;
-                          }
-                        },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.send, color: colors.primary, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Test Now',
+                            style: TextStyle(
+                              color: colors.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      debugPrint('Schedule 30s test button tapped');
+                      await NotificationService.scheduleTestIn30Seconds();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('Scheduled for 30 seconds!'),
+                            backgroundColor: colors.primary,
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: colors.primary.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.schedule, color: colors.primary, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Test 30s',
+                            style: TextStyle(
+                              color: colors.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 40),
             _sectionHeader('ABOUT', colors),
@@ -195,13 +173,223 @@ class SettingScreen extends HookConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Text(
-        title,
+        title.toUpperCase(),
         style: TextStyle(
           color: colors.textMuted,
           fontSize: 12,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.2,
         ),
+      ),
+    );
+  }
+
+  Widget _buildToggleCard(
+    String label,
+    IconData icon,
+    bool value,
+    Function(bool) onChanged,
+    AppColorScheme colors,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.border.withOpacity(0.5)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: colors.textSecondary),
+              const SizedBox(width: 16),
+              Text(
+                label,
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: colors.primary,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMaxChallengesDropdown(WidgetRef ref, AppColorScheme colors) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.border.withOpacity(0.5)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.flag, color: colors.textSecondary),
+              const SizedBox(width: 16),
+              Text(
+                'Max Active Challenges',
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+            decoration: BoxDecoration(
+              color: colors.chipBg,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: colors.border.withOpacity(0.5)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<int>(
+                value: ref.watch(maxChallengesProvider),
+                isDense: true,
+                menuMaxHeight: 250,
+                dropdownColor: colors.dialogBg,
+                borderRadius: BorderRadius.circular(12),
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+                icon: Icon(
+                  Icons.expand_more,
+                  color: colors.textSecondary,
+                  size: 18,
+                ),
+                items: List.generate(20, (i) => i + 1).map((val) {
+                  return DropdownMenuItem(value: val, child: Text('$val'));
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    ref.read(maxChallengesProvider.notifier).state = val;
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationCard(
+    BuildContext context,
+    WidgetRef ref,
+    AppColorScheme colors,
+  ) {
+    final enabled = ref.watch(notificationsEnabledProvider);
+    final time = ref.watch(notificationTimeProvider);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.border.withOpacity(0.5)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.notifications_active, color: colors.textSecondary),
+                  const SizedBox(width: 16),
+                  Text(
+                    'Daily Reminders',
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              Switch(
+                value: enabled,
+                onChanged: (val) {
+                  ref.read(notificationsEnabledProvider.notifier).set(val);
+                  _updateNotifications(ref);
+                },
+                activeColor: colors.primary,
+              ),
+            ],
+          ),
+          if (enabled) ...[
+            Divider(color: colors.divider.withOpacity(0.3), height: 24),
+            InkWell(
+              onTap: () async {
+                final picked = await showTimePicker(
+                  context: context,
+                  initialTime: time,
+                  builder: (context, child) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.dark(
+                          primary: colors.primary,
+                          onPrimary: Colors.black,
+                          surface: colors.surface,
+                          onSurface: colors.textPrimary,
+                        ),
+                      ),
+                      child: child!,
+                    );
+                  },
+                );
+                if (picked != null) {
+                  ref.read(notificationTimeProvider.notifier).set(picked);
+                  _updateNotifications(ref);
+                }
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, color: colors.textSecondary),
+                      const SizedBox(width: 16),
+                      Text(
+                        'Reminder Time',
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    time.format(context),
+                    style: TextStyle(
+                      color: colors.primary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -274,9 +462,7 @@ class SettingScreen extends HookConsumerWidget {
     AppColorScheme colors,
   ) {
     return InkWell(
-      onTap: () {
-        ref.read(themeModeProvider.notifier).state = mode;
-      },
+      onTap: () => ref.read(themeModeProvider.notifier).state = mode,
       borderRadius: BorderRadius.circular(20),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -374,6 +560,22 @@ class SettingScreen extends HookConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _updateNotifications(WidgetRef ref) {
+    final enabled = ref.read(notificationsEnabledProvider);
+    if (!enabled) {
+      NotificationService.cancelAll();
+      return;
+    }
+    final time = ref.read(notificationTimeProvider);
+    final activeChallenge = ref
+        .read(challengeProvider.notifier)
+        .activeChallenge;
+    NotificationService.scheduleDailyNotification(
+      time: time,
+      activeChallenge: activeChallenge,
     );
   }
 }

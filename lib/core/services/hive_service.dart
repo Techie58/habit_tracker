@@ -9,6 +9,7 @@ import '../../features/challenge/data/models/challenge_model.dart';
 class HiveService {
   static const String habitBoxName = 'habits';
   static const String challengeBoxName = 'challenges';
+  static const String settingsBoxName = 'settings';
 
   static Future<void> init() async {
     await Hive.initFlutter();
@@ -20,6 +21,7 @@ class HiveService {
     // Open Boxes
     await Hive.openBox<HabitModel>(habitBoxName);
     await Hive.openBox<ChallengeModel>(challengeBoxName);
+    await Hive.openBox(settingsBoxName);
   }
 
   static Box<HabitModel> get habitBox => Hive.box<HabitModel>(habitBoxName);
@@ -104,5 +106,16 @@ class HiveService {
       final updatedChallenge = challenge.copyWith(completedDates: newDates);
       await updateChallenge(updatedChallenge);
     }
+  }
+
+  // Settings Methods
+  static Box get settingsBox => Hive.box(settingsBoxName);
+
+  static Future<void> saveSetting(String key, dynamic value) async {
+    await settingsBox.put(key, value);
+  }
+
+  static dynamic getSetting(String key, {dynamic defaultValue}) {
+    return settingsBox.get(key, defaultValue: defaultValue);
   }
 }
